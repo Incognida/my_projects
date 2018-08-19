@@ -7,6 +7,7 @@ schema_view = get_swagger_view(title='MapEvent API')
 
 urlpatterns = [
     path('', include('accounts.urls')),
+    path('events/', include('social_events.urls'))
 ]
 
 if settings.DEBUG:

@@ -1,8 +1,37 @@
 import sys
+import os
 import subprocess
 import time
 
 import psycopg2
+import django
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'doTogether.settings'
+django.setup()
+from django.contrib.auth import get_user_model
+from social_events.models import Category, Subcategory
+
+
+def populate():
+    User = get_user_model()
+    incognida = User.objects.create_user(
+        username="incognida", password="123qwe123",
+        email="psauxgrepkill@gmail.com", sex="male", age=24
+    )
+    incognida.is_staff = True
+    incognida.is_superuser=True
+    incognida.save()
+    for i in range(10):
+        c = Category.objects.create(title=f"c{i+1}")
+        for j in range(4):
+            Subcategory.objects.create(title=f"s{i+1}{j+1}",
+                                       category=c)
+    for i in range(10):
+        User.objects.create_user(
+            username=f"u{i+1}", password="123qwe123",
+            email=f"u{i+1}@gmail.com",
+            sex="male", age=18 + i,
+        )
 
 
 def delete_db():
@@ -43,8 +72,8 @@ if __name__ == '__main__':
     delete_db()
     if len(sys.argv) == 2:
         if 'start' == sys.argv[1]:
-            subprocess.Popen(['python', 'manage.py', 'makemigrations'])
-            time.sleep(1)
-            subprocess.Popen(['python', 'manage.py', 'migrate'])
-            time.sleep(4)
-            print('finished')
+            x = subprocess.Popen(['python', 'manage.py', 'makemigrations'])
+            x.wait()
+            y = subprocess.Popen(['python', 'manage.py', 'migrate'])
+            y.wait()
+            populate()
