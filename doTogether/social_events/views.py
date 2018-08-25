@@ -4,7 +4,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from .models import Event
-from .serializers import EventSerializer, CreateEventSerializer
+from .serializers import (EventSerializer, CreateEventSerializer,
+                          UpdateEventSerializer)
 
 
 class EventPagination(PageNumberPagination):
@@ -34,6 +35,16 @@ class EventModelViewSet(ModelViewSet):
             "latitude": 56.2151,
             "longitude": 34.1212,
             "max_members": 10
+        }
+    ---
+    Event patching
+    ---
+        {
+            "category_id": 2,
+            "subcategories_ids": [5, 6, 7, 8],
+            "members_ids": [2, 3],
+            "black_members_ids": [4],
+            "max_members": 4
         }
     ---
     """
@@ -73,7 +84,7 @@ class EventModelViewSet(ModelViewSet):
     def update(self, request, *args, partial=True, **kwargs):
         instance = self.get_object()
         if instance.owner == request.user:
-            serializer = CreateEventSerializer(
+            serializer = UpdateEventSerializer(
                 instance=instance, data=request.data
             )
             serializer.is_valid(raise_exception=True)

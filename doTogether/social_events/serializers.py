@@ -1,6 +1,8 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from accounts.serializers import UserSerializer
 from .models import Event, Category
+from .utils import UpdateValidator
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -12,6 +14,34 @@ class EventSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class UpdateEventSerializer(serializers.ModelSerializer):
+    category_id = serializers.IntegerField(
+        min_value=1, max_value=1024, required=False
+    )
+    subcategories_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1, max_value=1024 ** 2),
+        required=False
+    )
+    members_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1, max_value=10000),
+        required=False
+    )
+    black_members_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1, max_value=10000),
+        required=False
+    )
+
+    class Meta:
+        model = Event
+        fields = ('category_id','subcategories_ids', 'members_ids',
+                  'description', 'latitude', 'longitude',
+                  'max_members', 'ends_at', 'black_members_ids')
+        extra_kwargs = dict.fromkeys(fields, {'required': False})
+
+    def update(self, instance, validated_data):
+        return UpdateValidator(instance, validated_data).validate()
+
+
 class CreateEventSerializer(serializers.ModelSerializer):
     category_id = serializers.IntegerField(
         min_value=1, max_value=1024, required=True
@@ -19,15 +49,11 @@ class CreateEventSerializer(serializers.ModelSerializer):
     subcategories_ids = serializers.ListField(
         child=serializers.IntegerField(min_value=1, max_value=1024**2)
     )
-    members_ids = serializers.ListField(
-        child=serializers.IntegerField(min_value=1, max_value=10000)
-    )
 
     class Meta:
         model = Event
-        fields = ('category_id','subcategories_ids', 'members_ids',
-                  'description', 'latitude', 'longitude',
-                  'max_members', 'ends_at')
+        fields = ('description', 'latitude', 'longitude',
+                  'max_members', 'ends_at', 'category_id','subcategories_ids')
 
     def create(self, validated_data):
         request = self.context.get('request', None)
@@ -38,26 +64,12 @@ class CreateEventSerializer(serializers.ModelSerializer):
         if not self.validate_subcategories():
             raise Exception("One of the subcategories doesn't match category")
         user = request.user
-        del self.validated_data['subcategories_ids']
-        del self.validated_data['members_ids']
+        if self.validated_data.get('subcategories_ids', None):
+            del self.validated_data['subcategories_ids']
         event = Event.objects.create(
             owner=user, **self.validated_data
         )
         return event
-
-    def update(self, instance, validated_data):
-        max_members = validated_data.get('max_members', None)
-        members = validated_data.get('members_ids', None)
-        if max_members and max_members > len(members):
-            raise Exception("Members overflow, up the limit of max_members")
-        if not self.validate_subcategories():
-            raise Exception("One of the subcategories doesn't match category")
-
-        ends_at = validated_data.get("ends_at", None)
-        if ends_at and ends_at < instance.starts_at:
-            raise Exception(
-                "Event can't be finished earlier than it's started"
-            )
 
     def validate_subcategories(self):
         subcategories_ids = self.validated_data.get("subcategories_ids", None)
@@ -69,3 +81,4 @@ class CreateEventSerializer(serializers.ModelSerializer):
             if subcategory_id not in sub_ids:
                 return False
         return True
+

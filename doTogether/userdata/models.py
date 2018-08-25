@@ -16,7 +16,7 @@ class CustomUser(AbstractUser):
         ('male', 'male'),
         ('female', 'female')
     )
-
+    rating = models.IntegerField(default=0)
     image = models.ImageField(upload_to=download_img, null=True, blank=True)
     sex = models.CharField(max_length=6, choices=SEX_CHOICES, default='male')
     age = models.PositiveIntegerField(null=True, blank=True)
