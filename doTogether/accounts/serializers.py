@@ -59,18 +59,3 @@ class CreateUserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
-
-
-class LoginUserSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(required=True)
-    password = serializers.CharField(required=True, write_only=True)
-
-    class Meta:
-        model = User
-        fields = ('username', 'password')
-
-    def validate(self, data):
-        user = User.objects.filter(username__iexact=data['username']).first()
-        if not user:
-            raise serializers.ValidationError('Unknown user')
-        return data

@@ -20,6 +20,7 @@ from django.urls import include, path
 from doTogether import settings
 
 urlpatterns = [
+    path('chat/', include('chat.urls')),
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
 ]
